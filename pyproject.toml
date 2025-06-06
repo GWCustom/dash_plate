@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "dash_plate"
 version = "0.1.0"
-description = "A small visualization library for creating dash-compatible laboratory plate objects."
+description = "A small visualization library for creating dash-compatible laboratory plate objects"
 authors = ["Griffin White <griffin@gwc-solutions.ch>"]
 
 [tool.poetry.dependencies]
