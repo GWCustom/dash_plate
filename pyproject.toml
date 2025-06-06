@@ -1,0 +1,12 @@
+[tool.poetry]
+name = "dash_plate"
+version = "0.1.0"
+description = "A small visualization library for creating dash-compatible laboratory plate objects."
+authors = ["Griffin White <griffin@gwc-solutions.ch>"]
+
+[tool.poetry.dependencies]
+python = "^3.10
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
