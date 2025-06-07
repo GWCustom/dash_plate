@@ -39,7 +39,7 @@ def plate_figure(
         if all(isinstance(c, (str, type(None))) for c in colors):
             colors = ['rgba(0,0,0,0)' if c is None else c for c in colors]
     else:
-        colors = [val for val in values if val is not None]
+        colors = [0 if val is None else val for val in values]
 
     # Well coordinates and hovertext
     row_labels = [chr(ord('A') + i) for i in range(n_rows)]
