@@ -1,55 +1,79 @@
 import plotly.graph_objects as go
 
 def plate_figure(
-    values=None, 
+    values=None,
     colors=None,
     overlay_text=None,
-    n_rows=8, 
-    n_columns=12, 
+    n_rows=8,
+    n_columns=12,
     marker=None,
-    scale=1.0, 
-    marker_size=None, 
+    scale=1.0,
+    marker_size=None,
     showscale=False,
     text_size=None,
     text_color="black",
     **kwargs
 ) -> go.Figure:
+    
+    n_wells = n_rows * n_columns
 
-    if values is None:
-        values = [None] * (n_rows * n_columns)
-    assert len(values) == n_rows * n_columns, "Length of `values` must be equal to n_rows * n_columns."
+    # Helper to pad or validate list input
+    def pad_or_check(name, lst):
+        if lst is None:
+            return [None] * n_wells
+        if len(lst) > n_wells:
+            raise ValueError(f"{name} length ({len(lst)}) exceeds total wells ({n_wells}).")
+        return lst + [None] * (n_wells - len(lst))
 
-    if colors is None:
-        colors = values
-    assert len(colors) == n_rows * n_columns, "Length of `colors` must match number of wells."
+    # Prepare values
+    values = pad_or_check("values", values)
 
+    # Handle overlay_text
+    overlay_text = pad_or_check("overlay_text", overlay_text)
+
+    # Handle colors
+    using_custom_colors = colors is not None
+    if using_custom_colors:
+        colors = pad_or_check("colors", colors)
+        # If using literal color values, ensure all entries are valid CSS or rgba
+        if all(isinstance(c, (str, type(None))) for c in colors):
+            colors = ['rgba(0,0,0,0)' if c is None else c for c in colors]
+    else:
+        colors = [val for val in values if val is not None]
+
+    # Well coordinates and hovertext
     row_labels = [chr(ord('A') + i) for i in range(n_rows)]
     col_labels = list(range(1, n_columns + 1))
     x_offset = 0.4
     label_pad = 0.08 * scale
 
-    x, y, text = [], [], []
+    x, y, hovertext = [], [], []
     for i, row in enumerate(row_labels):
         for j, col in enumerate(col_labels):
             x.append(col + x_offset)
             y.append(n_rows - i)
             label = f"{row}{col}"
             val = values[i * n_columns + j]
-            text.append(f"{label}<br>{val}" if val is not None else label)
+            hovertext.append(f"{label}<br>{val}" if val is not None else label)
 
     if marker_size is None:
         marker_size = min(60, int(500 / max(n_rows, n_columns)))
 
+    # Construct marker
     if marker is None:
         marker = dict(
             size=marker_size,
             symbol='circle',
             color=colors,
-            colorscale='Blues',
-            colorbar=dict(title="Value") if showscale else None,
-            showscale=showscale,
-            line=dict(color='black', width=1)
+            line=dict(color='black', width=1),
         )
+        if using_custom_colors:
+            marker['showscale'] = False
+        else:
+            marker['colorscale'] = 'Blues'
+            marker['showscale'] = showscale
+            if showscale:
+                marker['colorbar'] = dict(title="Value")
     else:
         marker = marker.copy()
         marker.setdefault("size", marker_size)
@@ -61,7 +85,7 @@ def plate_figure(
         y=y,
         mode='markers',
         marker=marker,
-        hovertext=text,
+        hovertext=hovertext,
         hoverinfo='text',
         **kwargs
     )
@@ -93,15 +117,8 @@ def plate_figure(
     gray_frame_width = 2
 
     shapes = [
-        dict(
-            type='rect',
-            x0=0.62 + x_offset,
-            x1=n_columns + x_offset + 0.38,
-            y0=0.72,
-            y1=n_rows + 0.38,
-            line=dict(color='darkgray', width=gray_frame_width),
-            layer='below'
-        ),
+        dict(type='rect', x0=0.62 + x_offset, x1=n_columns + x_offset + 0.38,
+             y0=0.72, y1=n_rows + 0.38, line=dict(color='darkgray', width=gray_frame_width), layer='below'),
         dict(type='line', x0=left_x, y0=0.5, x1=right_x, y1=0.5, line=dict(color='black', width=border_width), layer='below'),
         dict(type='line', x0=left_x, y0=0.5, x1=left_x, y1=n_rows + 0.5, line=dict(color='black', width=border_width), layer='below'),
         dict(type='line', x0=left_x, y0=n_rows + 0.5, x1=left_x + 0.5, y1=n_rows + 1.0, line=dict(color='black', width=border_width), layer='below'),
@@ -137,11 +154,8 @@ def plate_figure(
     if overlay_text is not None:
         if isinstance(overlay_text, str) and overlay_text == "values":
             overlay_text = [str(v) if v is not None else "" for v in values]
-        assert len(overlay_text) == n_rows * n_columns, "overlay_text must match number of wells."
-
         if text_size is None:
             text_size = font_size - 2
-
         text_trace = go.Scatter(
             x=x,
             y=y,
