@@ -1,2 +1,2 @@
 
-from .plot import plate_figure
+from .plot import Plate
