@@ -10,12 +10,18 @@ def plate_figure(
     scale=1.0, 
     marker_size=None, 
     showscale=False,
+    text_size=None,
+    text_color="black",
     **kwargs
 ) -> go.Figure:
 
     if values is None:
         values = [None] * (n_rows * n_columns)
     assert len(values) == n_rows * n_columns, "Length of `values` must be equal to n_rows * n_columns."
+
+    if colors is None:
+        colors = values
+    assert len(colors) == n_rows * n_columns, "Length of `colors` must match number of wells."
 
     row_labels = [chr(ord('A') + i) for i in range(n_rows)]
     col_labels = list(range(1, n_columns + 1))
@@ -38,18 +44,17 @@ def plate_figure(
         marker = dict(
             size=marker_size,
             symbol='circle',
-            color=values,
+            color=colors,
             colorscale='Blues',
             colorbar=dict(title="Value") if showscale else None,
             showscale=showscale,
             line=dict(color='black', width=1)
         )
-        
     else:
         marker = marker.copy()
         marker.setdefault("size", marker_size)
         marker.setdefault("line", {}).setdefault("width", 1)
-        marker.setdefault("color", values)
+        marker.setdefault("color", colors)
 
     scatter = go.Scatter(
         x=x,
@@ -84,8 +89,8 @@ def plate_figure(
 
     left_x = 0.5
     right_x = n_columns + x_offset + 0.5
-    border_width = 4  # fixed
-    gray_frame_width = 2  # fixed
+    border_width = 4
+    gray_frame_width = 2
 
     shapes = [
         dict(
@@ -104,18 +109,13 @@ def plate_figure(
         dict(type='line', x0=right_x, y0=0.5, x1=right_x, y1=n_rows + 1.0, line=dict(color='black', width=border_width), layer='below'),
     ]
 
-    # Axis padding
     x_pad, y_pad = 1.0, 1.0
-
-    # Proportional margins
     margin = dict(
         l=scale * (20 + 5 * n_rows),
         r=scale * 20,
         t=scale * 20,
         b=scale * 20
     )
-
-    # Dynamically scaled figure size
     cell_px = 60 * scale
     width = int(cell_px * n_columns + margin["l"] + margin["r"])
     height = int(cell_px * n_rows + margin["t"] + margin["b"])
@@ -131,4 +131,27 @@ def plate_figure(
         height=height,
     )
 
-    return go.Figure(data=[scatter], layout=layout)
+    fig = go.Figure(data=[scatter], layout=layout)
+
+    # Optional overlay text
+    if overlay_text is not None:
+        if isinstance(overlay_text, str) and overlay_text == "values":
+            overlay_text = [str(v) if v is not None else "" for v in values]
+        assert len(overlay_text) == n_rows * n_columns, "overlay_text must match number of wells."
+
+        if text_size is None:
+            text_size = font_size - 2
+
+        text_trace = go.Scatter(
+            x=x,
+            y=y,
+            mode="text",
+            text=overlay_text,
+            textposition="middle center",
+            textfont=dict(size=text_size, color=text_color),
+            hoverinfo='skip',
+            showlegend=False
+        )
+        fig.add_trace(text_trace)
+
+    return fig
