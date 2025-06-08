@@ -38,8 +38,7 @@ class Plate:
         cls,
         well_dict: Dict[str, Dict[str, Union[float, str]]],
         n_rows: int = 8,
-        n_columns: int = 12,
-        fill_direction: str = "horizontal"
+        n_columns: int = 12
     ) -> "Plate":
         def normalize_well(w):
             match = re.match(r"([A-Ha-h])0*(\d+)", w)
@@ -59,10 +58,7 @@ class Plate:
             if row_idx >= n_rows or col_idx >= n_columns:
                 continue
 
-            if fill_direction == "vertical":
-                idx = col_idx * n_rows + row_idx
-            else:
-                idx = row_idx * n_columns + col_idx
+            idx = row_idx * n_columns + col_idx
 
             values[idx] = content.get("value")
             colors[idx] = content.get("color")
@@ -79,8 +75,7 @@ class Plate:
         color_col="color",
         text_col="text",
         n_rows: int = 8,
-        n_columns: int = 12,
-        fill_direction: str = "horizontal"
+        n_columns: int = 12
     ) -> "Plate":
         record_dict = {
             row[well_col]: {
