@@ -17,7 +17,7 @@ The `Plate` class provides a flexible, intuitive, and customizable way to visual
 ## 📋 Installation
 
 ```bash
-pip install plotly pandas
+pip install plotly_plate
 ```
 
 ---
@@ -49,7 +49,8 @@ import pandas as pd
 from plate import Plate
 
 df = pd.DataFrame({
-    "well": ["A1", "A2", "B1", "B2"],
+    # Representations with or without leading zeros in well-names, supported.
+    "well": ["A1", "A02", "B01", "B2"], 
     "value": [0.1, 0.2, 0.3, 0.4],
     "color": ["green", "blue", "orange", "purple"],
     "text": ["Low", "Mid", "High", "Peak"]
@@ -93,17 +94,35 @@ When using lists of `values`, `colors`, or `overlay_text`, you control the layou
 ### Example
 
 ```python
+col = ["red", "yellow", "green"]
+
 # Horizontal fill
-Plate(values=[0, 1, 2], n_rows=1, n_columns=3).plot(fill_direction="horizontal")
+horiz = Plate(
+    values=[0, 1, 2], 
+    colors=col,n_rows=3, 
+    n_columns=3, 
+    fill_direction="horizontal"
+).plot(marker_size=20)
 
 # Vertical fill
-Plate(values=[0, 1, 2], n_rows=3, n_columns=1).plot(fill_direction="vertical")
+vert = Plate(
+    values=[0, 1, 2], 
+    colors=col,
+    n_rows=3,
+    n_columns=3, 
+    fill_direction="vertical"
+).plot(marker_size=20)
 ```
 
 See figures below for visual comparison:
 
-- **Figure A**: Horizontal fill (A1=0, A2=1, A3=2)
-- **Figure B**: Vertical fill (A1=0, B1=1, C1=2)
+**Figure A**: Horizontal fill
+
+![HorizontalFill](assets/horiz.png)
+
+- **Figure B**: Vertical fill 
+
+![VerticalFill](assets/vert.png)
 
 ---
 
