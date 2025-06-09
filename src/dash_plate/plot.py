@@ -1,80 +1,10 @@
 import plotly.graph_objects as go
-import re
 import pandas as pd
-from typing import Optional, Dict, List, Union
-
-
-def generate_row_labels(n_rows: int) -> List[str]:
-    """Generate Excel-style row labels (A, B, ..., Z, AA, AB, ...)"""
-    labels = []
-    i = 0
-    while len(labels) < n_rows:
-        label = ''
-        temp = i
-        while True:
-            label = chr(ord('A') + temp % 26) + label
-            temp = temp // 26 - 1
-            if temp < 0:
-                break
-        labels.append(label)
-        i += 1
-    return labels
-
-
-def normalize_well(well):
-    """
-    This function validates the names of wells, and splits the letter
-    and number portions of the well names for downstream processing.
-    It supports well names with 1 or 2 letters followed by a number,
-    with or without leading zeros.
-
-    Args:
-        well (str): The name of the well, e.g. "A1", "B12", F01, AA02, etc.
-
-    Returns:
-        (tuple): A tuple containing the row letters and column number.
-
-    Raises:
-        ValueError: raised if the well name does not match the expected format
-    """
-
-    match = re.match(r"^([A-Z]+)0*(\d+)$", well.strip().upper())
-    if not match:
-        raise ValueError(f"Invalid well name: {well}")
-
-    row_letters, col_number = match.groups()
-    if len(row_letters) > 2:
-        raise ValueError(f"Row label too long: '{row_letters}' (max 2 characters allowed)")
-
-    return row_letters, int(col_number)
-
-
-def pad_or_check(name, lst, n_wells):
-    """ 
-    Verifies that the length of the provided list is less than or equal to the
-    total number of wells, and pads the list with None values if necessary,
-    ensuring that the list has exactly `n_wells` elements.
-
-    Args:
-        name (str): The name of the list being checked or padded.
-        lst (list): The list to check or pad.
-        n_wells (int): The total number of wells.
-
-    Returns:
-        list: The padded list with None values if necessary.
-
-    Raises:
-        ValueError: If the list length exceeds the number of wells.
-    """
-
-    if lst is None:
-        return [None] * n_wells
-    if len(lst) > n_wells:
-        raise ValueError(f"{name} length ({len(lst)}) exceeds total wells ({n_wells}).")
-    return lst + [None] * (n_wells - len(lst))
+from .utils import generate_row_labels, normalize_well, pad_or_check
 
 
 class Plate:
+    
     """
     Represents a microplate with configurable layout and visualization.
     Supports arbitrary row labels (A-Z, AA, AB...) and 1+ digit column indices.
@@ -112,6 +42,51 @@ class Plate:
             fill_direction=self.fill_direction,
             **kwargs
         )
+
+
+    def to_dict(self): 
+        """
+        Convert the Plate instance to a dictionary representation.
+        The dictionary will contain well names as keys and a dictionary of
+        content as values, where the content dictionary can contain keys
+        "value", "color", and "text", representing the well's value,
+        color, and overlay text respectively.
+
+        Returns:
+            dict: A dictionary representation of the Plate instance.
+        """
+
+        well_dict = {}
+        
+        for row in range(self.n_rows):
+
+            row_label = generate_row_labels(self.n_rows)[row]
+            
+            for col in range(1, self.n_columns + 1):
+
+                well_name = f"{row_label}{col}"
+                idx = row * self.n_columns + (col - 1)
+                well_dict[well_name] = {}
+                
+                if self.values is not None:
+                    try:
+                        well_dict[well_name]["value"] = self.values[idx]
+                    except IndexError:
+                        pass
+
+                if self.colors is not None:
+                    try:
+                        well_dict[well_name]["color"] = self.colors[idx]
+                    except IndexError:
+                        pass
+
+                if self.overlay_text is not None:
+                    try:
+                        well_dict[well_name]["text"] = self.overlay_text[idx]
+                    except IndexError:
+                        pass
+
+        return well_dict
 
 
     @classmethod
@@ -209,7 +184,36 @@ class Plate:
         fill_direction="horizontal", 
         **kwargs
     ):
-        """Internal Plotly drawing logic."""
+        
+        """
+        Create a Plotly figure representing a microplate with wells.
+
+        Args:
+            values (list): List of values for each well.
+            colors (list): List of colors for each well.
+            overlay_text (list): List of overlay text for each well.
+            n_rows (int): Number of rows in the plate.
+            n_columns (int): Number of columns in the plate.
+            marker (dict, optional): Custom marker settings for the wells.
+            scale (float): Scale factor for the figure size.
+            marker_size (int, optional): Size of the markers.
+            showscale (bool): Whether to show the color scale.
+            text_size (int, optional): Size of the overlay text.
+            text_color (str): Color of the overlay text.
+            fill_direction (str): Direction to fill the wells ("horizontal" or "vertical").
+            **kwargs: Additional keyword arguments for the Plotly figure.
+
+        Returns:
+            go.Figure: A Plotly figure object representing the plate.
+
+        Raises:
+            ValueError: If fill_direction is not "horizontal" or "vertical",
+                        or if the length of values, colors, or overlay_text exceeds the number of wells.
+        """
+
+        if fill_direction not in ["horizontal", "vertical"]:
+            raise ValueError("fill_direction must be 'horizontal' or 'vertical'")
+
         n_wells = n_rows * n_columns
 
         values = pad_or_check("values", values, n_wells)
@@ -239,7 +243,7 @@ class Plate:
                 hovertext.append(f"{label}<br>{val}" if val is not None else label)
 
         if marker_size is None:
-            marker_size = min(60, int(500 / max(n_rows, n_columns)))
+            marker_size = min(45, int(400 / max(n_rows, n_columns)))
 
         if marker is None:
             marker = dict(size=marker_size, symbol='circle', color=colors, line=dict(color='black', width=1))
