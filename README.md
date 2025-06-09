@@ -32,13 +32,15 @@ from plate import Plate
 well_dict = {
     "A1": {"value": 0.1, "color": "green", "text": "Control"},
     "A2": {"value": 0.5, "color": "red", "text": "Test"},
-    "AA12": {"value": 0.9, "color": "blue", "text": "Sample"}  # Two-letter rows supported
+    "F12": {"value": 0.9, "color": "blue", "text": "Sample"}  # Two-letter rows supported
 }
 
-plate = Plate.from_dict(well_dict, n_rows=30, n_columns=24)
+plate = Plate.from_dict(well_dict, n_rows=8, n_columns=12)
 fig = plate.plot()
 fig.show()
 ```
+
+![FromDict](assets/from_dict.png)
 
 ---
 
@@ -61,11 +63,14 @@ fig = plate.plot(showscale=True)
 fig.show()
 ```
 
+![FromDF](assets/from_df.png)
+
 ---
 
 ### 3. Create a Plate from Lists
 
 ```python
+# Creating a 96-well plate (default)
 from plate import Plate
 
 values = list(range(96))
@@ -76,6 +81,20 @@ plate = Plate(values=values, colors=colors, overlay_text=text)
 fig = plate.plot(marker_size=30, scale=1.2)
 fig.show()
 ```
+
+![FromList](assets/from_list.png)
+
+
+```python
+# Creating a 384-well plate: 
+values = list(range(384))
+plate = Plate(values, n_rows=16, n_columns=24) 
+fig = plate.plot(scale=0.6, marker_size=15)
+fig.show() 
+
+```
+
+![BigPlate](assets/big_plate.png)
 
 ---
 
@@ -158,7 +177,6 @@ All of these can be passed to `Plate.plot(...)`:
 | `text_size`      | `int`     | Font size of the overlaid text                               |
 | `text_color`     | `str`     | Color of the overlay text (default `"black"`)               |
 | `showscale`      | `bool`    | Show color scale if using numeric values (default `False`)  |
-| `fill_direction` | `str`     | `"horizontal"` or `"vertical"` (default: `"horizontal"`)    |
 
 ---
 
