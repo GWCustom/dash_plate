@@ -118,9 +118,17 @@ See figures below for visual comparison:
 
 **Figure A**: Horizontal fill
 
+```python
+horiz.show()
+```
+
 ![HorizontalFill](assets/horiz.png)
 
 - **Figure B**: Vertical fill 
+
+```python
+vert.show()
+```
 
 ![VerticalFill](assets/vert.png)
 
